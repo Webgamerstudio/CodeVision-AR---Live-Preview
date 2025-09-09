@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CodeVision AR - Live Preview + AR Console</title>
+  <style>
+    :root{--bg:#0f1724;--panel:#071426;--accent:#0ea5a4;--muted:#94a3b8}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Roboto Condensed,Helvetica,Arial;background:var(--bg);color:#fff;display:flex;flex-direction:column;height:100vh}
+    header{padding:10px;background:linear-gradient(90deg,#071126,#0b1530);display:flex;align-items:center;justify-content:space-between;gap:8px}
+    header h1{margin:0;font-size:15px;color:var(--accent)}
+    .container{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px}
+    .panel{background:var(--panel);border-radius:8px;padding:8px;display:flex;flex-direction:column;min-height:0}
+    .tabs{display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+    .tab-btn{padding:6px 10px;border-radius:8px;border:none;background:#0b2230;color:#bfe8e6;cursor:pointer;transition:all 0.2s}
+    .tab-btn:hover{background:#15374a}
+    .tab-btn.active{background:var(--accent);color:#012}
+    textarea{flex:1;width:100%;min-height:120px;border-radius:6px;border:1px solid #123;resize:vertical;padding:10px;background:#021421;color:#dff0f0;font-family:'Monaco', 'Menlo', 'Ubuntu Mono', monospace;font-size:13px;line-height:1.4;transition:border-color 0.2s}
+    textarea:focus{outline:none;border-color:var(--accent)}
+    .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .btn{padding:8px 12px;border-radius:8px;border:none;background:var(--accent);color:#012;cursor:pointer;transition:all 0.2s;font-weight:500}
+    .btn:hover{transform:translateY(-1px);box-shadow:0 4px 8px rgba(14,165,164,0.3)}
+    .btn.clear{background:#dc2626}
+    .btn.clear:hover{box-shadow:0 4px 8px rgba(220,38,38,0.3)}
+    .small{font-size:13px;color:var(--muted)}
+    .preview-outer{display:flex;flex-direction:column;flex:1;min-height:0}
+    iframe{flex:1;border-radius:6px;border:1px solid #123;background:#fff;width:100%;min-height:200px}
+    .console{height:140px;overflow:auto;margin-top:8px;background:#031824;border-radius:6px;padding:8px;font-family:'Monaco', 'Menlo', 'Ubuntu Mono', monospace;font-size:13px;color:#dff0f0;border:1px solid #063;scrollbar-width:thin;scrollbar-color:#0ea5a4 #031824}
+    .console::-webkit-scrollbar{width:6px}
+    .console::-webkit-scrollbar-track{background:#031824}
+    .console::-webkit-scrollbar-thumb{background:#0ea5a4;border-radius:3px}
+    .console .line{padding:3px 0;border-bottom:1px dashed rgba(255,255,255,0.02)}
+    .console .line strong{color:#0ea5a4}
+    .flex-row{display:flex;gap:8px;align-items:center}
+    .status{display:flex;align-items:center;gap:8px}
+    .status-dot{width:8px;height:8px;border-radius:50%;background:#22c55e}
+    .status-dot.error{background:#dc2626}
+    @media(max-width:900px){
+      .container{grid-template-columns:1fr;grid-auto-rows:minmax(200px,auto)}
+      .console{height:120px}
+      header h1{font-size:14px}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🚀 CodeVision AR — HTML / CSS / JS</h1>
+    <div class="status">
+      <div class="status-dot" id="statusDot"></div>
+      <div class="small">Ready • Console + AR Support</div>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Editor panel -->
+    <div class="panel" style="min-height:300px">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="html">HTML</button>
+        <button class="tab-btn" data-tab="css">CSS</button>
+        <button class="tab-btn" data-tab="js">JS</button>
+        <button class="tab-btn" data-tab="ar">🥽 </button>
+      </div>
+
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+        <div class="controls">
+          <button id="run" class="btn">▶ Run</button>
+          <button id="auto" class="btn">Auto: Off</button>
+          <button id="startAR" class="btn" style="background:#8b5cf6">🥽</button>
+          <button id="clearConsole" class="btn clear">🗑 Clear Console</button>
+        </div>
+        <div style="margin-left:auto" class="small">Active: <span id="activeLines">0</span> lines • Total: <span id="totalLines">0</span> lines</div>
+      </div>
+
+      <textarea id="editor_html" data-lang="html" placeholder="Write your HTML here..."><div id="app">
+  <h2>Hello, Live Preview!</h2>
+  <p>Write HTML and click Run to see the magic!</p>
+  <button onclick="greet()">Click Me</button>
+</div></textarea>
+      <textarea id="editor_css" data-lang="css" style="display:none" placeholder="Add your CSS styles here...">body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+}
+
+#app {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+h2 {
+  color: #333;
+  margin-top: 0;
+}
+
+button {
+  background: #0ea5a4;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+button:hover {
+  background: #0d8f8e;
+  transform: translateY(-2px);
+}</textarea>
+      <textarea id="editor_js" data-lang="js" style="display:none" placeholder="Add your JavaScript here...">console.log("JavaScript is ready!");
+
+function greet() {
+  const name = prompt("What's your name?") || "Friend";
+  alert(`Hello, ${name}! Welcome to the live preview editor.`);
+  console.log(`Greeted user: ${name}`);
+}
+
+// Example of dynamic content
+setTimeout(() => {
+  const app = document.getElementById('app');
+  if (app) {
+    const p = document.createElement('p');
+    p.innerHTML = '<em>This paragraph was added dynamically after 2 seconds!</em>';
+    p.style.color = '#666';
+    app.appendChild(p);
+  }
+}, 2000);</textarea>
+      <textarea id="editor_ar" data-lang="ar" style="display:none" placeholder="Write AR.js code here...">// AR.js + A-Frame Example
+// This creates a simple AR scene with 3D objects
+
+// HTML for AR scene (add to HTML tab):
+/*
+<script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.min.js"></script>
+
+<a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+  <a-marker preset="hiro">
+    <a-box position="0 0.5 0" rotation="0 45 0" color="#ff6b6b" animation="property: rotation; to: 0 405 0; loop: true; dur: 3000"></a-box>
+    <a-sphere position="2 1 0" color="#4ecdc4" animation="property: position; to: 2 2 0; dir: alternate; loop: true; dur: 2000"></a-sphere>
+    <a-cylinder position="-2 0.75 0" color="#45b7d1" animation="property: scale; to: 1.2 1.2 1.2; dir: alternate; loop: true; dur: 1500"></a-cylinder>
+  </a-marker>
+  <a-entity camera></a-entity>
+</a-scene>
+*/
+
+// JavaScript for AR interactions
+console.log("AR mode activated!");
+
+// Check if AR is supported
+if (navigator.xr) {
+  navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
+    if (supported) {
+      console.log("WebXR AR is supported!");
+    } else {
+      console.log("Using AR.js fallback");
+    }
+  });
+} else {
+  console.log("WebXR not supported, using AR.js");
+}
+
+// AR marker detection
+AFRAME.registerComponent('markerhandler', {
+  init: function() {
+    this.el.addEventListener('markerFound', () => {
+      console.log('AR Marker found! 🎯');
+    });
+    
+    this.el.addEventListener('markerLost', () => {
+      console.log('AR Marker lost 😞');
+    });
+  }
+});
+
+// AR object interactions
+AFRAME.registerComponent('ar-click-handler', {
+  init: function() {
+    this.el.addEventListener('click', () => {
+      console.log('AR object clicked! 🎉');
+      // Change color randomly
+      const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#6c5ce7'];
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      this.el.setAttribute('color', randomColor);
+    });
+  }
+});
+
+// Weather AR feature (example)
+async function addWeatherToAR() {
+  try {
+    // This would connect to a weather API
+    const weatherText = "Sunny 25°C";
+    console.log(`Adding weather to AR: ${weatherText}`);
+    
+    // Create weather display in AR
+    const weatherEntity = document.createElement('a-text');
+    weatherEntity.setAttribute('value', weatherText);
+    weatherEntity.setAttribute('position', '0 2 -1');
+    weatherEntity.setAttribute('color', 'white');
+    
+    // Add to AR scene if it exists
+    const scene = document.querySelector('a-scene');
+    if (scene) {
+      scene.appendChild(weatherEntity);
+    }
+  } catch (error) {
+    console.error('Weather AR error:', error);
+  }
+}
+    </div>
+
+    <!-- Preview + console -->
+    <div class="panel preview-outer">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+        <div class="small">Preview</div>
+        <div style="margin-left:auto" class="small">Live AR • Sandboxed iframe</div>
+      </div>
+
+      <iframe id="preview" sandbox="allow-scripts allow-modals allow-popups allow-camera allow-microphone"></iframe>
+
+      <div class="console" id="console">
+        <div class="line"><strong>[info]</strong> Console ready. Run your code to see output here.</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  // Elements
+  const tabs = document.querySelectorAll('.tab-btn');
+  const editors = {
+    html: document.getElementById('editor_html'),
+    css: document.getElementById('editor_css'),
+    js: document.getElementById('editor_js'),
+    ar: document.getElementById('editor_ar')
+  };
+  const runBtn = document.getElementById('run');
+  const autoBtn = document.getElementById('auto');
+  const startARBtn = document.getElementById('startAR');
+  const clearConsoleBtn = document.getElementById('clearConsole');
+  const preview = document.getElementById('preview');
+  const consoleEl = document.getElementById('console');
+  const activeLinesEl = document.getElementById('activeLines');
+  const totalLinesEl = document.getElementById('totalLines');
+  const statusDot = document.getElementById('statusDot');
+
+  let activeTab = 'html';
+  let auto = false;
+  let autoTimer = null;
+  let lastBlobUrl = null;
+
+  // Tab switching with animation
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabs.forEach(x => x.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = btn.dataset.tab;
+      showTab(tab);
+    });
+  });
+
+  function showTab(tab) {
+    activeTab = tab;
+    Object.keys(editors).forEach(key => {
+      editors[key].style.display = (key === tab) ? 'block' : 'none';
+    });
+    updateLineCounts();
+    editors[tab].focus();
+  }
+
+  // Line counting
+  function countLines(text) { 
+    return text.trim() ? text.split(/\r\n|\r|\n/).length : 0; 
+  }
+  
+  function updateLineCounts() {
+    const activeLines = countLines(editors[activeTab].value);
+    const totalLines = countLines(editors.html.value) + 
+                      countLines(editors.css.value) + 
+                      countLines(editors.js.value);
+    activeLinesEl.textContent = activeLines;
+    totalLinesEl.textContent = totalLines;
+  }
+
+  // Add input listeners
+  Object.values(editors).forEach(editor => {
+    editor.addEventListener('input', updateLineCounts);
+    
+    // Tab key handling for better code editing
+    editor.addEventListener('keydown', function(e) {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = this.selectionStart;
+        const end = this.selectionEnd;
+        this.value = this.value.substring(0, start) + '  ' + this.value.substring(end);
+        this.selectionStart = this.selectionEnd = start + 2;
+      }
+    });
+  });
+
+  // Console helpers
+  function appendConsole(type, msg) {
+    const el = document.createElement('div');
+    el.className = 'line';
+    const timestamp = new Date().toLocaleTimeString();
+    el.innerHTML = `<strong>[${type}]</strong> ${escapeHtml(msg)} <span style="color: var(--muted); font-size: 11px;">${timestamp}</span>`;
+    consoleEl.appendChild(el);
+    consoleEl.scrollTop = consoleEl.scrollHeight;
+    
+    // Update status indicator
+    if (type === 'error') {
+      statusDot.className = 'status-dot error';
+    } else {
+      statusDot.className = 'status-dot';
+    }
+  }
+
+  function escapeHtml(str) { 
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;'); 
+  }
+
+  // Listen to messages from preview iframe
+  window.addEventListener('message', (event) => {
+    try {
+      const data = event.data;
+      if (data && data.source === 'preview-console') {
+        const text = data.args.map(arg => 
+          (typeof arg === 'string') ? arg : JSON.stringify(arg, null, 2)
+        ).join(' ');
+        appendConsole(data.type, text);
+      }
+    } catch(error) {
+      console.error('Error handling message:', error);
+    }
+  });
+
+  clearConsoleBtn.onclick = () => { 
+    consoleEl.innerHTML = '<div class="line"><strong>[info]</strong> Console cleared.</div>';
+  };
+
+  function buildContent() {
+    const html = editors.html.value;
+    const css = editors.css.value;
+    const js = editors.js.value;
+    const ar = editors.ar.value;
+
+    // Enhanced console forwarder script
+    const forwarder = `
+<script>
+(function(){
+  function safeStringify(value) {
+    try {
+      if (typeof value === 'object' && value !== null) {
+        return JSON.stringify(value, null, 2);
+      }
+      return String(value);
+    } catch(e) {
+      return '[Object could not be serialized]';
+    }
+  }
+
+  function sendToParent(type, args) {
+    try {
+      const serializedArgs = Array.from(args).map(safeStringify);
+      parent.postMessage({
+        source: 'preview-console',
+        type: type,
+        args: serializedArgs
+      }, '*');
+    } catch(e) {
+      console.error('Failed to send message to parent:', e);
+    }
+  }
+
+  // Override console methods
+  ['log', 'info', 'warn', 'error', 'debug'].forEach(function(method) {
+    const original = console[method];
+    console[method] = function() {
+      sendToParent(method, arguments);
+      if (original && typeof original.apply === 'function') {
+        original.apply(console, arguments);
+      }
+    };
+  });
+
+  // Global error handling
+  window.addEventListener('error', function(event) {
+    const message = event.message + 
+                   (event.filename ? ' (in ' + event.filename + ':' + event.lineno + ')' : '');
+    sendToParent('error', [message]);
+  }, true);
+
+  // Unhandled promise rejection
+  window.addEventListener('unhandledrejection', function(event) {
+    const reason = event.reason && event.reason.message ? 
+                   event.reason.message : 
+                   String(event.reason);
+    sendToParent('error', ['Unhandled Promise Rejection: ' + reason]);
+  });
+
+  // Send ready signal
+  sendToParent('info', ['Preview loaded successfully']);
+})();
+<\/script>`;
+
+    return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CodeVision AR Preview</title>
+<!-- AR.js and A-Frame libraries -->
+<script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.min.js"></script>
+<style>
+  ${css}
+</style>
+</head>
+<body>
+${html}
+${forwarder}
+<script>
+try {
+  ${js}
+  
+  // AR specific code
+  ${ar}
+} catch(error) {
+  console.error('JavaScript execution error:', error.message);
+}
+<\/script>
+</body>
+</html>`;
+  }
+
+  // Load preview with blob URL
+  function loadPreview() {
+    const content = buildContent();
+    
+    try {
+      // Clean up previous blob URL
+      if (lastBlobUrl) {
+        URL.revokeObjectURL(lastBlobUrl);
+      }
+      
+      const blob = new Blob([content], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      lastBlobUrl = url;
+      
+      preview.src = url;
+      runBtn.innerHTML = '⟳ Running...';
+      
+      setTimeout(() => {
+        runBtn.innerHTML = '▶ Run';
+      }, 1000);
+      
+    } catch(error) {
+      appendConsole('error', 'Failed to load preview: ' + error.message);
+    }
+    
+    updateLineCounts();
+  }
+
+  // Button event handlers
+  runBtn.addEventListener('click', loadPreview);
+  
+  autoBtn.addEventListener('click', () => {
+    auto = !auto;
+    autoBtn.textContent = auto ? '⏸ Auto: On' : '▶ Auto: Off';
+    
+    if (auto) {
+      appendConsole('info', 'Auto-refresh enabled (every 2 seconds)');
+      autoTimer = setInterval(() => {
+        loadPreview();
+      }, 2000);
+    } else {
+      appendConsole('info', 'Auto-refresh disabled');
+      clearInterval(autoTimer);
+    }
+  });
+
+  // Keyboard shortcuts
+  Object.values(editors).forEach(editor => {
+    editor.addEventListener('keydown', function(event) {
+      // Ctrl/Cmd + Enter to run
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+        event.preventDefault();
+        loadPreview();
+      }
+      
+      // Ctrl/Cmd + S to run (prevent save dialog)
+      if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+        event.preventDefault();
+        loadPreview();
+      }
+    });
+  });
+
+  // Initialize
+  updateLineCounts();
+  loadPreview();
+  
+  // Show welcome message
+  setTimeout(() => {
+    appendConsole('info', 'Welcome! Use Ctrl+Enter or Cmd+Enter to run code quickly.');
+  }, 500);
+
+})();
+</script>
+</body>
+</html>
