@@ -1,1206 +1,420 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>CodeVision Pro - Live Preview HTML/CSS/JS Editor</title>
-  <style>
-    :root {
-      --bg: #0f1724;
-      --panel: #071426;
-      --accent: #0ea5a4;
-      --muted: #94a3b8;
-      --success: #22c55e;
-      --error: #dc2626;
-      --warning: #f59e0b;
-      --border: #1e293b;
-      --light-bg: #f0f9ff;
-      --light-text: #0369a1;
-    }
-    * {
-      box-sizing: border-box;
-    }
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-      background: var(--bg);
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      overflow: hidden;
-    }
-    header {
-      padding: 12px 16px;
-      background: linear-gradient(90deg, #071126, #0b1530);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      border-bottom: 1px solid var(--border);
-    }
-    header h1 {
-      margin: 0;
-      font-size: 16px;
-      color: var(--accent);
-      font-weight: 600;
-    }
-    .container {
-      flex: 1;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0;
-      min-height: 0;
-    }
-    .panel {
-      background: var(--panel);
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-      border-right: 1px solid var(--border);
-    }
-    .panel:last-child {
-      border-right: none;
-    }
-    .tabs {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 8px;
-      flex-wrap: wrap;
-    }
-    .tab-btn {
-      padding: 8px 14px;
-      border-radius: 8px;
-      border: none;
-      background: #0b2230;
-      color: #bfe8e6;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-size: 13px;
-      font-weight: 500;
-      position: relative;
-    }
-    .tab-btn:hover {
-      background: #15374a;
-      transform: translateY(-1px);
-    }
-    .tab-btn.active {
-      background: var(--accent);
-      color: #012;
-    }
-    .tab-btn.has-error::after {
-      content: '⚠';
-      color: var(--error);
-      position: absolute;
-      top: -4px;
-      right: -4px;
-      font-size: 10px;
-    }
-    .editor-container {
-      flex: 1;
-      position: relative;
-      min-height: 0;
-      border-radius: 8px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-    }
-    textarea {
-      width: 100%;
-      height: 100%;
-      border: none;
-      resize: none;
-      padding: 12px;
-      background: #021421;
-      color: #dff0f0;
-      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-      font-size: 13px;
-      line-height: 1.5;
-      transition: all 0.2s;
-      scrollbar-width: thin;
-      scrollbar-color: var(--accent) #031824;
-    }
-    textarea:focus {
-      outline: none;
-      background: #032028;
-    }
-    textarea::-webkit-scrollbar {
-      width: 8px;
-    }
-    textarea::-webkit-scrollbar-track {
-      background: #031824;
-    }
-    textarea::-webkit-scrollbar-thumb {
-      background: var(--accent);
-      border-radius: 4px;
-    }
-    .controls {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      flex-wrap: wrap;
-      margin-bottom: 8px;
-      padding: 8px;
-      background: #0a1929;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-    }
-    .btn {
-      padding: 8px 14px;
-      border-radius: 6px;
-      border: none;
-      background: var(--accent);
-      color: #012;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-weight: 500;
-      font-size: 13px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(14, 165, 164, 0.3);
-    }
-    .btn:active {
-      transform: translateY(0);
-    }
-    .btn.clear {
-      background: var(--error);
-      color: #fff;
-    }
-    .btn.clear:hover {
-      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-    }
-    .btn.save {
-      background: var(--success);
-      color: #fff;
-    }
-    .btn.save:hover {
-      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
-    }
-    .btn.settings {
-      background: #6366f1;
-      color: #fff;
-    }
-    .btn.settings:hover {
-      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-    }
-    .small {
-      font-size: 12px;
-      color: var(--muted);
-    }
-    .preview-outer {
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-    }
-    .preview-header {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      margin-bottom: 8px;
-      padding: 8px;
-      background: #0a1929;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-    }
-    .device-selector {
-      display: flex;
-      gap: 4px;
-    }
-    .device-btn {
-      padding: 4px 8px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--muted);
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 11px;
-      transition: all 0.2s;
-    }
-    .device-btn:hover,
-    .device-btn.active {
-      background: var(--accent);
-      color: #012;
-      border-color: var(--accent);
-    }
-    .iframe-container {
-      flex: 1;
-      position: relative;
-      border-radius: 8px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      background: #fff;
-      transition: all 0.3s;
-    }
-    .iframe-container.mobile {
-      max-width: 375px;
-      margin: 0 auto;
-    }
-    .iframe-container.tablet {
-      max-width: 768px;
-      margin: 0 auto;
-    }
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      background: #fff;
-    }
-    .console {
-      height: 160px;
-      overflow: auto;
-      margin-top: 8px;
-      background: #031824;
-      border-radius: 8px;
-      padding: 8px;
-      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-      font-size: 12px;
-      color: #dff0f0;
-      border: 1px solid var(--border);
-      scrollbar-width: thin;
-      scrollbar-color: var(--accent) #031824;
-    }
-    .console::-webkit-scrollbar {
-      width: 6px;
-    }
-    .console::-webkit-scrollbar-track {
-      background: #031824;
-    }
-    .console::-webkit-scrollbar-thumb {
-      background: var(--accent);
-      border-radius: 3px;
-    }
-    .console .line {
-      padding: 4px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-      word-wrap: break-word;
-    }
-    .console .line:last-child {
-      border-bottom: none;
-    }
-    .console .line strong {
-      color: var(--accent);
-    }
-    .console .line.error strong {
-      color: var(--error);
-    }
-    .console .line.warn strong {
-      color: var(--warning);
-    }
-    .status {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--success);
-      box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
-    }
-    .status-dot.error {
-      background: var(--error);
-      box-shadow: 0 0 8px rgba(220, 38, 38, 0.4);
-    }
-    .status-dot.warning {
-      background: var(--warning);
-      box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
-    }
-    .loading-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s;
-      border-radius: 8px;
-    }
-    .loading-overlay.show {
-      opacity: 1;
-      pointer-events: all;
-    }
-    .spinner {
-      width: 32px;
-      height: 32px;
-      border: 3px solid transparent;
-      border-top: 3px solid var(--accent);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-      0% {
-        transform: rotate(0deg);
-      }
-      100% {
-        transform: rotate(360deg);
-      }
-    }
-    .settings-modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s;
-    }
-    .settings-modal.show {
-      opacity: 1;
-      pointer-events: all;
-    }
-    .settings-content {
-      background: var(--panel);
-      padding: 24px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      width: 90%;
-      max-width: 500px;
-      max-height: 80%;
-      overflow: auto;
-    }
-    .settings-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    .settings-header h3 {
-      margin: 0;
-      color: var(--accent);
-    }
-    .close-btn {
-      background: none;
-      border: none;
-      color: var(--muted);
-      cursor: pointer;
-      font-size: 20px;
-      padding: 4px;
-    }
-    .settings-group {
-      margin-bottom: 20px;
-    }
-    .settings-group label {
-      display: block;
-      margin-bottom: 8px;
-      color: #fff;
-      font-weight: 500;
-    }
-    .settings-group input,
-    .settings-group select {
-      width: 100%;
-      padding: 8px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      background: #021421;
-      color: #dff0f0;
-      font-family: inherit;
-    }
-    .checkbox-group {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-    .checkbox-group input[type="checkbox"] {
-      width: auto;
-    }
-    .shortcuts {
-      background: #0a1929;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      margin-top: 16px;
-    }
-    .shortcuts h4 {
-      margin: 0 0 12px 0;
-      color: var(--accent);
-      font-size: 14px;
-    }
-    .shortcuts .shortcut {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-      font-size: 12px;
-    }
-    .shortcut-key {
-      background: #0b2230;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-family: monospace;
-      color: var(--accent);
-    }
-    @media (max-width: 900px) {
-      .container {
-        grid-template-columns: 1fr;
-        grid-template-rows: 1fr 1fr;
-      }
-      .console {
-        height: 120px;
-      }
-      header h1 {
-        font-size: 14px;
-      }
-      .controls {
-        flex-wrap: wrap;
-        gap: 6px;
-      }
-      .btn {
-        padding: 6px 10px;
-        font-size: 12px;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Preview AR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .logo {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .view-toggle {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .view-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .container {
+            height: calc(100vh - 60px);
+            display: flex;
+            position: relative;
+        }
+
+        .editor-panel {
+            width: 50%;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .preview-panel {
+            width: 50%;
+            background: white;
+            border-left: 2px solid rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .tabs {
+            display: flex;
+            background: rgba(102, 126, 234, 0.1);
+            border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #667eea;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 -2px 10px rgba(102, 126, 234, 0.2);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .editor {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            background: white;
+            color: #333;
+        }
+
+        .preview {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+
+        .run-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .run-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .run-btn:active {
+            transform: translateY(-1px);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 8px 15px;
+            }
+
+            .logo {
+                font-size: 1.2rem;
+            }
+
+            .view-toggle {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
+
+            .container.mobile-view .editor-panel {
+                width: 100%;
+            }
+
+            .container.mobile-view .preview-panel {
+                width: 100%;
+                position: absolute;
+                top: 0;
+                left: 0;
+                z-index: 10;
+                display: none;
+            }
+
+            .container.mobile-view.show-preview .editor-panel {
+                display: none;
+            }
+
+            .container.mobile-view.show-preview .preview-panel {
+                display: block;
+            }
+
+            .tab {
+                padding: 10px 8px;
+                font-size: 0.8rem;
+            }
+
+            .editor {
+                padding: 15px;
+                font-size: 12px;
+            }
+
+            .run-btn {
+                bottom: 15px;
+                right: 15px;
+                padding: 12px 20px;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 5px 10px;
+            }
+
+            .logo {
+                font-size: 1rem;
+            }
+
+            .view-toggle {
+                padding: 5px 10px;
+                font-size: 0.7rem;
+            }
+
+            .tab {
+                padding: 8px 5px;
+                font-size: 0.7rem;
+            }
+
+            .editor {
+                padding: 10px;
+                font-size: 11px;
+            }
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .editor-panel, .preview-panel {
+            animation: slideIn 0.5s ease;
+        }
+    </style>
 </head>
 <body>
-  <header>
-    <h1>🚀 CodeVision Pro — HTML / CSS / JS</h1>
-    <div class="status">
-      <div class="status-dot" id="statusDot"></div>
-      <div class="small">Ready • Last saved: <span id="lastSaved">Never</span></div>
+    <div class="header">
+        <div class="logo">Live Preview AR</div>
+        <button class="view-toggle" onclick="toggleView()">Switch View</button>
     </div>
-  </header>
 
-  <div class="container">
-    <!-- Editor panel -->
-    <div class="panel">
-      <div class="tabs">
-        <button class="tab-btn active" data-tab="html">📄 HTML</button>
-        <button class="tab-btn" data-tab="css">🎨 CSS</button>
-        <button class="tab-btn" data-tab="js">⚡ JS</button>
-      </div>
-
-      <div class="controls">
-        <button id="run" class="btn">▶ Run</button>
-        <button id="auto" class="btn">⏸ Auto: Off</button>
-        <button id="save" class="btn save">💾 Save</button>
-        <button id="load" class="btn">📁 Load</button>
-        <button id="settings" class="btn settings">⚙️ Settings</button>
-        <button id="clearConsole" class="btn clear">🗑 Clear Console</button>
-        <div style="margin-left: auto" class="small">
-          <span id="activeLines">0</span> lines •
-          <span id="totalLines">0</span> total •
-          <span id="fileSize">0</span> KB
-        </div>
-      </div>
-
-      <div class="editor-container">
-        <textarea id="editor_html" data-lang="html" placeholder="Write your HTML here..."><div id="app">
-  <h2>Hello, CodeVision Pro! 🎉</h2>
-  <p>Enhanced live preview editor with new features!</p>
-  <button onclick="greet()" class="btn-demo">Click Me</button>
-  <div class="features">
-    <h3>New Features:</h3>
-    <ul>
-      <li>✨ Better responsive design</li>
-      <li>🔧 Settings panel</li>
-      <li>💾 Save/Load functionality</li>
-      <li>📱 Device preview modes</li>
-      <li>🎨 Enhanced console</li>
-    </ul>
-  </div>
-</div></textarea>
-        <textarea id="editor_css" data-lang="css" style="display: none" placeholder="Add your CSS styles here...">body {
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  margin: 0;
-  padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  min-height: 100vh;
+    <div class="container" id="container">
+        <div class="editor-panel">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('html')">HTML</button>
+                <button class="tab" onclick="switchTab('css')">CSS</button>
+                <button class="tab" onclick="switchTab('js')">JavaScript</button>
+            </div>
+            <textarea class="editor" id="html-editor" placeholder="Write your HTML here..."><!DOCTYPE html>
+<html>
+<head>
+    <title>My Page</title>
+</head>
+<body>
+    <h1>Hello World!</h1>
+    <p>Welcome to Live Preview AR</p>
+    <button onclick="changeColor()">Change Color</button>
+</body>
+</html></textarea>
+            <textarea class="editor" id="css-editor" style="display: none;" placeholder="Write your CSS here...">body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
 }
 
-#app {
-  background: white;
-  padding: 30px;
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  max-width: 700px;
-  margin: 0 auto;
-  animation: slideUp 0.6s ease-out;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-h2 {
-  color: #333;
-  margin-top: 0;
-  font-size: 2rem;
-  text-align: center;
-}
-
-h3 {
-  color: #555;
-  margin-top: 2rem;
-  border-bottom: 2px solid #0ea5a4;
-  padding-bottom: 8px;
+h1 {
+    color: white;
+    text-align: center;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
 }
 
 p {
-  color: #666;
-  line-height: 1.6;
-  text-align: center;
-  font-size: 1.1rem;
+    color: white;
+    text-align: center;
+    font-size: 18px;
 }
 
-.btn-demo {
-  background: linear-gradient(45deg, #0ea5a4, #0d8f8e);
-  color: white;
-  border: none;
-  padding: 15px 30px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 600;
-  transition: all 0.3s;
-  display: block;
-  margin: 20px auto;
-  box-shadow: 0 4px 15px rgba(14, 165, 164, 0.3);
+button {
+    display: block;
+    margin: 20px auto;
+    padding: 10px 20px;
+    background: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: transform 0.3s ease;
 }
 
-.btn-demo:hover {
-  background: linear-gradient(45deg, #0d8f8e, #0ea5a4);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(14, 165, 164, 0.4);
-}
-
-.features {
-  margin-top: 2rem;
-}
-
-.features ul {
-  list-style: none;
-  padding: 0;
-}
-
-.features li {
-  padding: 10px 0;
-  border-bottom: 1px solid #eee;
-  color: #555;
-  font-size: 1rem;
-}
-
-.features li:last-child {
-  border-bottom: none;
+button:hover {
+    transform: scale(1.1);
 }</textarea>
-        <textarea id="editor_js" data-lang="js" style="display: none" placeholder="Add your JavaScript here...">console.log("🚀 CodeVision Pro is ready!");
-
-function greet() {
-  const names = ["Coder", "Developer", "Creator", "Builder", "Innovator"];
-  const randomName = names[Math.floor(Math.random() * names.length)];
-  const name = prompt(`What's your name, ${randomName}?`) || randomName;
-  
-  alert(`🎉 Hello, ${name}! Welcome to CodeVision Pro!\n\n✨ New features include:\n• Enhanced UI/UX\n• Save/Load projects\n• Device preview modes\n• Better console\n• Settings panel`);
-  
-  console.log(`👋 Greeted user: ${name}`);
-  
-  const app = document.getElementById('app');
-  if (app) {
-    app.style.transform = 'scale(1.02)';
-    app.style.transition = 'transform 0.2s';
-    setTimeout(() => {
-      app.style.transform = 'scale(1)';
-    }, 200);
-  }
-}
-
-async function addDynamicContent() {
-  try {
-    console.log("⏳ Adding dynamic content...");
-    
-    const app = document.getElementById('app');
-    if (!app) {
-      throw new Error("App container not found!");
-    }
-    
-    const dynamicDiv = document.createElement('div');
-    dynamicDiv.innerHTML = `
-      <div style="margin-top: 2rem; padding: 20px; background: #f0f9ff; border-left: 4px solid #0ea5a4; border-radius: 8px;">
-        <h4 style="color: #0ea5a4; margin: 0 0 10px 0;">🎯 Dynamic Content</h4>
-        <p style="margin: 0; color: #0369a1;">This content was added dynamically after 2 seconds!</p>
-        <small style="color: #64748b;">Timestamp: ${new Date().toLocaleTimeString()}</small>
-      </div>
-    `;
-    
-    app.appendChild(dynamicDiv);
-    console.log("✅ Dynamic content added successfully!");
-    
-    dynamicDiv.style.opacity = '0';
-    dynamicDiv.style.transform = 'translateY(20px)';
-    dynamicDiv.style.transition = 'all 0.5s ease';
-    
-    setTimeout(() => {
-      dynamicDiv.style.opacity = '1';
-      dynamicDiv.style.transform = 'translateY(0)';
-    }, 100);
-    
-  } catch (error) {
-    console.error("❌ Error adding dynamic content:", error.message);
-  }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  console.log("📄 DOM loaded, initializing features...");
-  
-  setTimeout(addDynamicContent, 2000);
-  
-  console.log("⌨️ Keyboard shortcuts available!");
-  console.log("Ctrl+Enter: Run code");
-  console.log("Ctrl+S: Save project");
-  console.log("Ctrl+R: Toggle auto-refresh");
-  console.log("Ctrl+L: Clear console");
-  console.log("Ctrl+,: Open settings");
-});
-
-const performanceObserver = new PerformanceObserver((list) => {
-  const entries = list.getEntries();
-  entries.forEach((entry) => {
-    if (entry.entryType === 'navigation') {
-      console.log(`📊 Page load time: ${entry.loadEventEnd - entry.loadEventStart}ms`);
-    }
-  });
-});
-
-try {
-  performanceObserver.observe({ entryTypes: ['navigation'] });
-} catch (e) {
-  console.log("Performance monitoring not available in this environment");
+            <textarea class="editor" id="js-editor" style="display: none;" placeholder="Write your JavaScript here...">function changeColor() {
+    const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    document.body.style.background = `linear-gradient(45deg, ${randomColor}, #667eea)`;
 }</textarea>
-        
-        <div class="loading-overlay" id="loadingOverlay">
-          <div class="spinner"></div>
         </div>
-      </div>
+
+        <div class="preview-panel">
+            <iframe class="preview" id="preview"></iframe>
+        </div>
     </div>
 
-    <!-- Preview + console -->
-    <div class="panel preview-outer">
-      <div class="preview-header">
-        <div class="small">🖥️ Preview</div>
-        <div class="device-selector">
-          <button class="device-btn active" data-device="desktop">💻 Desktop</button>
-          <button class="device-btn" data-device="tablet">📱 Tablet</button>
-          <button class="device-btn" data-device="mobile">📱 Mobile</button>
-        </div>
-        <div style="margin-left: auto" class="small">Live Preview • Sandboxed</div>
-      </div>
-      
-      <div class="iframe-container" id="iframeContainer">
-        <iframe id="preview" sandbox="allow-scripts allow-modals allow-popups allow-same-origin allow-forms"></iframe>
-      </div>
-      
-      <div class="console" id="console">
-        <div class="line"><strong>[info]</strong> 🎉 Enhanced console ready! Run your code to see output here.</div>
-      </div>
-    </div>
-  </div>
+    <button class="run-btn" onclick="runCode()">▶ Run Code</button>
 
-  <!-- Settings Modal -->
-  <div class="settings-modal" id="settingsModal">
-    <div class="settings-content">
-      <div class="settings-header">
-        <h3>⚙️ Settings</h3>
-        <button class="close-btn" id="closeSettings">×</button>
-      </div>
-      
-      <div class="settings-group">
-        <label>Editor Theme</label>
-        <select id="editorTheme">
-          <option value="dark">🌙 Dark (Default)</option>
-          <option value="light">☀️ Light</option>
-          <option value="blue">🔵 Blue</option>
-        </select>
-      </div>
-      
-      <div class="settings-group">
-        <label>Font Size</label>
-        <select id="fontSize">
-          <option value="12">12px</option>
-          <option value="13" selected>13px (Default)</option>
-          <option value="14">14px</option>
-          <option value="16">16px</option>
-          <option value="18">18px</option>
-        </select>
-      </div>
-      
-      <div class="settings-group">
-        <label>Auto-refresh Delay (seconds)</label>
-        <select id="autoDelay">
-          <option value="1">1 second</option>
-          <option value="2" selected>2 seconds (Default)</option>
-          <option value="3">3 seconds</option>
-          <option value="5">5 seconds</option>
-        </select>
-      </div>
-      
-      <div class="checkbox-group">
-        <input type="checkbox" id="lineNumbers" checked>
-        <label for="lineNumbers">Show line numbers</label>
-      </div>
-      
-      <div class="checkbox-group">
-        <input type="checkbox" id="wordWrap" checked>
-        <label for="wordWrap">Word wrap</label>
-      </div>
-      
-      <div class="checkbox-group">
-        <input type="checkbox" id="autoSave">
-        <label for="autoSave">Auto-save (every 30 seconds)</label>
-      </div>
-      
-      <div class="shortcuts">
-        <h4>⌨️ Keyboard Shortcuts</h4>
-        <div class="shortcut">
-          <span>Run Code</span>
-          <span class="shortcut-key">Ctrl+Enter</span>
-        </div>
-        <div class="shortcut">
-          <span>Save Project</span>
-          <span class="shortcut-key">Ctrl+S</span>
-        </div>
-        <div class="shortcut">
-          <span>Toggle Auto-refresh</span>
-          <span class="shortcut-key">Ctrl+R</span>
-        </div>
-        <div class="shortcut">
-          <span>Clear Console</span>
-          <span class="shortcut-key">Ctrl+L</span>
-        </div>
-        <div class="shortcut">
-          <span>Open Settings</span>
-          <span class="shortcut-key">Ctrl+,</span>
-        </div>
-      </div>
-    </div>
-  </div>
+    <script>
+        let currentTab = 'html';
+        let isMobileView = window.innerWidth <= 768;
+        let showingPreview = false;
 
-  <script>
-    (function () {
-      // Elements
-      const tabs = document.querySelectorAll('.tab-btn');
-      const editors = {
-        html: document.getElementById('editor_html'),
-        css: document.getElementById('editor_css'),
-        js: document.getElementById('editor_js')
-      };
-      const runBtn = document.getElementById('run');
-      const autoBtn = document.getElementById('auto');
-      const saveBtn = document.getElementById('save');
-      const loadBtn = document.getElementById('load');
-      const settingsBtn = document.getElementById('settings');
-      const clearConsoleBtn = document.getElementById('clearConsole');
-      const preview = document.getElementById('preview');
-      const consoleEl = document.getElementById('console');
-      const activeLinesEl = document.getElementById('activeLines');
-      const totalLinesEl = document.getElementById('totalLines');
-      const fileSizeEl = document.getElementById('fileSize');
-      const statusDot = document.getElementById('statusDot');
-      const lastSavedEl = document.getElementById('lastSaved');
-      const loadingOverlay = document.getElementById('loadingOverlay');
-      const settingsModal = document.getElementById('settingsModal');
-      const closeSettings = document.getElementById('closeSettings');
-      const deviceBtns = document.querySelectorAll('.device-btn');
-      const iframeContainer = document.getElementById('iframeContainer');
-
-      // State
-      let activeTab = 'html';
-      let auto = false;
-      let autoTimer = null;
-      let autoSaveTimer = null;
-      let lastBlobUrl = null;
-      let currentDevice = 'desktop';
-      let settings = {
-        theme: 'dark',
-        fontSize: 13,
-        autoDelay: 2,
-        lineNumbers: true,
-        wordWrap: true,
-        autoSave: false
-      };
-
-      // Load settings
-      function loadSettings() {
-        const saved = localStorage.getItem('codevision_settings');
-        if (saved) {
-          settings = { ...settings, ...JSON.parse(saved) };
-          applySettings();
+        // Initialize
+        if (isMobileView) {
+            document.getElementById('container').classList.add('mobile-view');
         }
-      }
 
-      // Save settings
-      function saveSettings() {
-        localStorage.setItem('codevision_settings', JSON.stringify(settings));
-        consoleLog('[info]', 'Settings saved successfully');
-      }
+        // Auto-run code on load
+        setTimeout(runCode, 500);
 
-      // Apply settings
-      function applySettings() {
-        Object.values(editors).forEach(editor => {
-          editor.style.fontSize = settings.fontSize + 'px';
-          editor.style.whiteSpace = settings.wordWrap ? 'pre-wrap' : 'pre';
-          editor.style.lineHeight = settings.lineNumbers ? '1.5' : '1.5';
+        function switchTab(tab) {
+            // Hide all editors
+            document.getElementById('html-editor').style.display = 'none';
+            document.getElementById('css-editor').style.display = 'none';
+            document.getElementById('js-editor').style.display = 'none';
+
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+
+            // Show selected editor and activate tab
+            document.getElementById(tab + '-editor').style.display = 'block';
+            event.target.classList.add('active');
+
+            currentTab = tab;
+        }
+
+        function runCode() {
+            const html = document.getElementById('html-editor').value;
+            const css = document.getElementById('css-editor').value;
+            const js = document.getElementById('js-editor').value;
+
+            const preview = document.getElementById('preview');
+            
+            const fullCode = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>${css}</style>
+                </head>
+                <body>
+                    ${html}
+                    <script>${js}<\/script>
+                </body>
+                </html>
+            `;
+
+            preview.src = 'data:text/html;charset=utf-8,' + encodeURIComponent(fullCode);
+        }
+
+        function toggleView() {
+            const container = document.getElementById('container');
+            
+            if (isMobileView) {
+                showingPreview = !showingPreview;
+                if (showingPreview) {
+                    container.classList.add('show-preview');
+                    document.querySelector('.view-toggle').textContent = 'Show Editor';
+                } else {
+                    container.classList.remove('show-preview');
+                    document.querySelector('.view-toggle').textContent = 'Show Preview';
+                }
+            }
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            const wasMobile = isMobileView;
+            isMobileView = window.innerWidth <= 768;
+            
+            const container = document.getElementById('container');
+            
+            if (isMobileView && !wasMobile) {
+                container.classList.add('mobile-view');
+                document.querySelector('.view-toggle').textContent = 'Show Preview';
+            } else if (!isMobileView && wasMobile) {
+                container.classList.remove('mobile-view', 'show-preview');
+                document.querySelector('.view-toggle').textContent = 'Switch View';
+                showingPreview = false;
+            }
         });
 
-        document.getElementById('editorTheme').value = settings.theme;
-        document.getElementById('fontSize').value = settings.fontSize;
-        document.getElementById('autoDelay').value = settings.autoDelay;
-        document.getElementById('lineNumbers').checked = settings.lineNumbers;
-        document.getElementById('wordWrap').checked = settings.wordWrap;
-        document.getElementById('autoSave').checked = settings.autoSave;
-
-        // Apply theme
-        if (settings.theme === 'light') {
-          document.documentElement.style.setProperty('--bg', '#f0f9ff');
-          document.documentElement.style.setProperty('--panel', '#e5e7eb');
-          document.documentElement.style.setProperty('--border', '#d1d5db');
-          document.documentElement.style.setProperty('--muted', '#6b7280');
-        } else if (settings.theme === 'blue') {
-          document.documentElement.style.setProperty('--bg', '#1e3a8a');
-          document.documentElement.style.setProperty('--panel', '#1e40af');
-          document.documentElement.style.setProperty('--border', '#3b82f6');
-          document.documentElement.style.setProperty('--muted', '#93c5fd');
-        } else {
-          document.documentElement.style.setProperty('--bg', '#0f1724');
-          document.documentElement.style.setProperty('--panel', '#071426');
-          document.documentElement.style.setProperty('--border', '#1e293b');
-          document.documentElement.style.setProperty('--muted', '#94a3b8');
-        }
-
-        if (settings.autoSave) {
-          startAutoSave();
-        } else if (autoSaveTimer) {
-          clearInterval(autoSaveTimer);
-          autoSaveTimer = null;
-        }
-      }
-
-      // Auto-save functionality
-      function startAutoSave() {
-        if (autoSaveTimer) clearInterval(autoSaveTimer);
-        autoSaveTimer = setInterval(() => {
-          saveProject('autosave');
-        }, 30000);
-      }
-
-      // Tab switching
-      function showTab(tab) {
-        activeTab = tab;
-        tabs.forEach(x => x.classList.remove('active'));
-        document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
-        Object.keys(editors).forEach(key => {
-          editors[key].style.display = key === tab ? 'block' : 'none';
+        // Auto-run on input with debounce
+        let debounceTimer;
+        document.querySelectorAll('.editor').forEach(editor => {
+            editor.addEventListener('input', () => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(runCode, 1000);
+            });
         });
-        updateStats();
-        editors[tab].focus();
-      }
-
-      // Count non-empty lines
-      function countLines(text) {
-        return text.split(/\r\n|\r|\n/).filter(line => line.trim().length > 0).length;
-      }
-
-      // Calculate file size in KB
-      function calculateSize() {
-        const totalContent = Object.values(editors).map(e => e.value).join('');
-        return ((totalContent.length / 1024).toFixed(2));
-      }
-
-      // Update editor stats
-      function updateStats() {
-        const activeEditor = editors[activeTab];
-        activeLinesEl.textContent = countLines(activeEditor.value);
-        totalLinesEl.textContent = Object.values(editors).reduce((sum, e) => sum + countLines(e.value), 0);
-        fileSizeEl.textContent = calculateSize();
-      }
-
-      // Console logging
-      function consoleLog(type, message) {
-        const line = document.createElement('div');
-        line.className = 'line';
-        if (type === 'error') line.className += ' error';
-        if (type === 'warn') line.className += ' warn';
-        line.innerHTML = `<strong>[${type}]</strong> ${message}`;
-        consoleEl.appendChild(line);
-        consoleEl.scrollTop = consoleEl.scrollHeight;
-      }
-
-      // Clear console
-      function clearConsole() {
-        consoleEl.innerHTML = '<div class="line"><strong>[info]</strong> Console cleared</div>';
-      }
-
-      // Render preview
-      function renderPreview() {
-        loadingOverlay.classList.add('show');
-        statusDot.classList.remove('error', 'warning');
-        statusDot.classList.add('warning');
-
-        const html = editors.html.value;
-        const css = `<style>${editors.css.value}</style>`;
-        const js = `<script>${editors.js.value}<\/script>`;
-        const content = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            ${css}
-          </head>
-          <body>
-            ${html}
-            ${js}
-          </body>
-          </html>
-        `;
-
-        // Revoke previous Blob URL
-        if (lastBlobUrl) {
-          URL.revokeObjectURL(lastBlobUrl);
-        }
-
-        // Create new Blob URL
-        const blob = new Blob([content], { type: 'text/html' });
-        lastBlobUrl = URL.createObjectURL(blob);
-        preview.src = lastBlobUrl;
-
-        // Override console methods in iframe
-        setTimeout(() => {
-          const iframeWindow = preview.contentWindow;
-          if (iframeWindow) {
-            iframeWindow.console.log = (...args) => consoleLog('info', args.join(' '));
-            iframeWindow.console.error = (...args) => consoleLog('error', args.join(' '));
-            iframeWindow.console.warn = (...args) => consoleLog('warn', args.join(' '));
-            statusDot.classList.remove('warning');
-            statusDot.classList.add('success');
-            consoleLog('info', 'Preview updated successfully');
-          }
-          loadingOverlay.classList.remove('show');
-        }, 100);
-      }
-
-      // Save project
-      function saveProject(type = 'manual') {
-        const project = {
-          html: editors.html.value,
-          css: editors.css.value,
-          js: editors.js.value
-        };
-        const blob = new Blob([JSON.stringify(project)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `codevision_project_${new Date().toISOString()}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        lastSavedEl.textContent = new Date().toLocaleTimeString();
-        consoleLog('info', `${type === 'autosave' ? 'Auto-saved' : 'Saved'} project at ${lastSavedEl.textContent}`);
-      }
-
-      // Load project
-      function loadProject() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'application/json';
-        input.onchange = (e) => {
-          const file = e.target.files[0];
-          if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-              try {
-                const project = JSON.parse(event.target.result);
-                editors.html.value = project.html || '';
-                editors.css.value = project.css || '';
-                editors.js.value = project.js || '';
-                updateStats();
-                renderPreview();
-                consoleLog('info', 'Project loaded successfully');
-                lastSavedEl.textContent = new Date().toLocaleTimeString();
-              } catch (error) {
-                consoleLog('error', 'Failed to load project: ' + error.message);
-                statusDot.classList.add('error');
-              }
-            };
-            reader.readAsText(file);
-          }
-        };
-        input.click();
-      }
-
-      // Toggle auto-refresh
-      function toggleAutoRefresh() {
-        auto = !auto;
-        autoBtn.textContent = `⏸ Auto: ${auto ? 'On' : 'Off'}`;
-        if (auto) {
-          renderPreview();
-          autoTimer = setInterval(renderPreview, settings.autoDelay * 1000);
-        } else if (autoTimer) {
-          clearInterval(autoTimer);
-          autoTimer = null;
-        }
-        consoleLog('info', `Auto-refresh ${auto ? 'enabled' : 'disabled'}`);
-      }
-
-      // Switch device preview
-      function switchDevice(device) {
-        currentDevice = device;
-        deviceBtns.forEach(btn => btn.classList.remove('active'));
-        document.querySelector(`.device-btn[data-device="${device}"]`).classList.add('active');
-        iframeContainer.className = `iframe-container ${device}`;
-        consoleLog('info', `Switched to ${device} preview`);
-      }
-
-      // Initialize
-      loadSettings();
-      updateStats();
-      renderPreview();
-
-      // Event listeners
-      tabs.forEach(tab => {
-        tab.addEventListener('click', () => showTab(tab.dataset.tab));
-      });
-
-      runBtn.addEventListener('click', renderPreview);
-
-      autoBtn.addEventListener('click', toggleAutoRefresh);
-
-      saveBtn.addEventListener('click', () => saveProject('manual'));
-
-      loadBtn.addEventListener('click', loadProject);
-
-      settingsBtn.addEventListener('click', () => {
-        settingsModal.classList.add('show');
-      });
-
-      closeSettings.addEventListener('click', () => {
-        settingsModal.classList.remove('show');
-      });
-
-      clearConsoleBtn.addEventListener('click', clearConsole);
-
-      deviceBtns.forEach(btn => {
-        btn.addEventListener('click', () => switchDevice(btn.dataset.device));
-      });
-
-      // Settings event listeners
-      document.getElementById('editorTheme').addEventListener('change', (e) => {
-        settings.theme = e.target.value;
-        applySettings();
-        saveSettings();
-      });
-
-      document.getElementById('fontSize').addEventListener('change', (e) => {
-        settings.fontSize = parseInt(e.target.value);
-        applySettings();
-        saveSettings();
-      });
-
-      document.getElementById('autoDelay').addEventListener('change', (e) => {
-        settings.autoDelay = parseInt(e.target.value);
-        if (auto && autoTimer) {
-          clearInterval(autoTimer);
-          autoTimer = setInterval(renderPreview, settings.autoDelay * 1000);
-        }
-        saveSettings();
-      });
-
-      document.getElementById('lineNumbers').addEventListener('change', (e) => {
-        settings.lineNumbers = e.target.checked;
-        saveSettings();
-      });
-
-      document.getElementById('wordWrap').addEventListener('change', (e) => {
-        settings.wordWrap = e.target.checked;
-        applySettings();
-        saveSettings();
-      });
-
-      document.getElementById('autoSave').addEventListener('change', (e) => {
-        settings.autoSave = e.target.checked;
-        applySettings();
-        saveSettings();
-      });
-
-      // Keyboard shortcuts
-      document.addEventListener('keydown', (e) => {
-        if (e.ctrlKey) {
-          switch (e.key) {
-            case 'Enter':
-              e.preventDefault();
-              renderPreview();
-              break;
-            case 's':
-              e.preventDefault();
-              saveProject('manual');
-              break;
-            case 'r':
-              e.preventDefault();
-              toggleAutoRefresh();
-              break;
-            case 'l':
-              e.preventDefault();
-              clearConsole();
-              break;
-            case ',':
-              e.preventDefault();
-              settingsModal.classList.add('show');
-              break;
-          }
-        }
-      });
-
-      // Auto-update stats on input
-      Object.values(editors).forEach(editor => {
-        editor.addEventListener('input', () => {
-          updateStats();
-          if (auto) {
-            clearInterval(autoTimer);
-            autoTimer = setInterval(renderPreview, settings.autoDelay * 1000);
-          }
-        });
-      });
-
-      // Error handling for JavaScript
-      preview.addEventListener('error', (e) => {
-        consoleLog('error', `Preview error: ${e.message}`);
-        statusDot.classList.add('error');
-      });
-
-      // Initialize console override
-      const originalConsole = console;
-      console.log = (...args) => {
-        consoleLog('info', args.join(' '));
-        originalConsole.log(...args);
-      };
-      console.error = (...args) => {
-        consoleLog('error', args.join(' '));
-        originalConsole.error(...args);
-      };
-      console.warn = (...args) => {
-        consoleLog('warn', args.join(' '));
-        originalConsole.warn(...args);
-      };
-    })();
-  </script>
+    </script>
 </body>
 </html>
