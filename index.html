@@ -185,6 +185,52 @@
     </style>
 </head>
 <body>
+    <!-- Define JavaScript functions before the ad scripts -->
+    <script>
+        // Handle ad load success
+        function adLoaded() {
+            document.querySelector('.ad-container').classList.add('visible');
+        }
+
+        // Handle ad load failure
+        function handleAdError(script) {
+            const adUnit = script.parentElement;
+            adUnit.style.display = 'none';
+            const remainingAds = document.querySelectorAll('.ad-unit:not([style*="display: none"])');
+            if (remainingAds.length === 0) {
+                document.querySelector('.ad-container').style.display = 'none';
+            } else {
+                rotateAds();
+            }
+        }
+
+        // Close individual ad
+        function closeAd(button) {
+            const adUnit = button.parentElement;
+            adUnit.style.display = 'none';
+            const remainingAds = document.querySelectorAll('.ad-unit:not([style*="display: none"])');
+            if (remainingAds.length === 0) {
+                document.querySelector('.ad-container').style.display = 'none';
+            } else {
+                rotateAds();
+            }
+        }
+
+        // Rotate ads
+        function rotateAds() {
+            const adUnits = document.querySelectorAll('.ad-unit:not([style*="display: none"])');
+            if (adUnits.length === 0) {
+                document.querySelector('.ad-container').style.display = 'none';
+                return;
+            }
+            const activeAd = document.querySelector('.ad-unit.active');
+            if (activeAd) activeAd.classList.remove('active');
+            
+            const randomIndex = Math.floor(Math.random() * adUnits.length);
+            adUnits[randomIndex].classList.add('active');
+        }
+    </script>
+
     <div class="container">
         <div class="tabs">
             <button class="tab active" onclick="switchTab('html')">HTML</button>
@@ -258,7 +304,7 @@ button:hover {
                         'params': {}
                     };
                 </script>
-                <script type="text/javascript" src="//www.highperformanceformat.com/c620af328467e6de19dc04af696ee0fb/invoke.js" onload="adLoaded()" onerror="adFailed()"></script>
+                <script type="text/javascript" src="//www.highperformanceformat.com/c620af328467e6de19dc04af696ee0fb/invoke.js" onload="adLoaded()" onerror="handleAdError(this)"></script>
             </div>
             <div class="ad-unit" data-size="320x50">
                 <button class="close-ad" onclick="closeAd(this)">X</button>
@@ -271,7 +317,7 @@ button:hover {
                         'params': {}
                     };
                 </script>
-                <script type="text/javascript" src="//www.highperformanceformat.com/78ade24182729fceea8e45203dad915b/invoke.js" onload="adLoaded()" onerror="adFailed()"></script>
+                <script type="text/javascript" src="//www.highperformanceformat.com/78ade24182729fceea8e45203dad915b/invoke.js" onload="adLoaded()" onerror="handleAdError(this)"></script>
             </div>
         </div>
     </div>
@@ -297,42 +343,6 @@ button:hover {
             preview.open();
             preview.write(html + css + js);
             preview.close();
-        }
-
-        // Handle ad load success
-        function adLoaded() {
-            document.querySelector('.ad-container').classList.add('visible');
-        }
-
-        // Handle ad load failure
-        function adFailed() {
-            document.querySelector('.ad-container').style.display = 'none';
-        }
-
-        // Close individual ad
-        function closeAd(button) {
-            const adUnit = button.parentElement;
-            adUnit.style.display = 'none';
-            const remainingAds = document.querySelectorAll('.ad-unit:not([style*="display: none"])');
-            if (remainingAds.length === 0) {
-                document.querySelector('.ad-container').style.display = 'none';
-            } else {
-                rotateAds();
-            }
-        }
-
-        // Rotate ads
-        function rotateAds() {
-            const adUnits = document.querySelectorAll('.ad-unit:not([style*="display: none"])');
-            if (adUnits.length === 0) {
-                document.querySelector('.ad-container').style.display = 'none';
-                return;
-            }
-            const activeAd = document.querySelector('.ad-unit.active');
-            if (activeAd) activeAd.classList.remove('active');
-            
-            const randomIndex = Math.floor(Math.random() * adUnits.length);
-            adUnits[randomIndex].classList.add('active');
         }
 
         // Show welcome message, update preview, and start ad rotation on page load
