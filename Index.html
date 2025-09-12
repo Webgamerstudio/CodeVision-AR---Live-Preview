@@ -15,16 +15,19 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            display: flex;
+            flex-direction: column;
         }
 
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
+            flex: 1;
+            width: 100%;
             background: rgba(255, 255, 255, 0.95);
-            border-radius: 10px;
+            border-radius: 0;
             overflow: hidden;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
         }
 
         .tabs {
@@ -51,9 +54,15 @@
             box-shadow: 0 -2px 10px rgba(102, 126, 234, 0.2);
         }
 
+        .editor-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
         .editor {
             width: 100%;
-            height: 300px;
+            height: 50vh; /* Half of viewport height for editor */
             border: none;
             outline: none;
             padding: 20px;
@@ -65,35 +74,112 @@
             color: #333;
         }
 
-        .run-btn {
-            display: block;
-            margin: 20px auto;
-            padding: 15px 30px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: bold;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-            transition: all 0.3s ease;
+        .preview {
+            width: 100%;
+            height: 40vh; /* Slightly less than editor for preview */
+            border-top: 1px solid #ddd;
+            background: white;
         }
 
-        .run-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        .ad-container {
+            width: 100%;
+            max-height: 250px; /* Max height for mobile-friendly ads */
+            background: #f0f0f0;
+            border-top: 1px solid #ddd;
+            display: none; /* Hidden by default, shown only if ad loads */
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            overflow: hidden; /* Prevent ads from overflowing */
+        }
+
+        .ad-container.visible {
+            display: flex; /* Shown when ad loads */
+        }
+
+        .ad-unit {
+            display: none; /* Hidden by default, shown via JS */
+            position: relative;
+            max-width: 320px; /* Max width to match ad sizes */
+            max-height: 250px; /* Max height to match ad sizes */
+            overflow: hidden; /* Prevent ad content from overflowing */
+        }
+
+        .ad-unit.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .ad-unit iframe {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .close-ad {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            line-height: 20px;
+            text-align: center;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .close-ad:hover {
+            background: #cc0000;
+        }
+
+        /* Styling for ads in the preview */
+        ins, .adsbygoogle {
+            display: block;
+            width: 100%;
+            max-width: 728px;
+            height: 90px;
+            margin: 10px auto;
+            background: #e0e0e0;
+            text-align: center;
+            line-height: 90px;
+            font-size: 1rem;
+            color: #333;
+            border: 1px solid #ccc;
         }
 
         @media (max-width: 768px) {
             .editor {
-                height: 200px;
+                height: 40vh;
                 font-size: 12px;
             }
 
-            .run-btn {
-                padding: 12px 20px;
+            .preview {
+                height: 40vh;
+            }
+
+            .ad-container {
+                max-height: 250px; /* Adjusted for mobile-friendly ads */
+            }
+
+            ins, .adsbygoogle {
+                height: 50px;
+                line-height: 50px;
                 font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .ad-container {
+                max-height: 50px; /* Prefer smaller ad (320x50) for small screens */
+            }
+
+            .ad-unit[data-size="300x250"] {
+                display: none !important; /* Hide larger ad on very small screens */
             }
         }
     </style>
@@ -105,7 +191,8 @@
             <button class="tab" onclick="switchTab('css')">CSS</button>
             <button class="tab" onclick="switchTab('js')">JavaScript</button>
         </div>
-        <textarea class="editor" id="html-editor" placeholder="Write your HTML here..."><!DOCTYPE html>
+        <div class="editor-container">
+            <textarea class="editor" id="html-editor" placeholder="Write your HTML here..."><!DOCTYPE html>
 <html>
 <head>
     <title>My Page</title>
@@ -114,9 +201,10 @@
     <h1>Hello World!</h1>
     <p>Welcome to Live Preview AR</p>
     <button onclick="changeColor()">Change Color</button>
+    <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-1234567890" data-ad-slot="1234567890"></ins>
 </body>
 </html></textarea>
-        <textarea class="editor" id="css-editor" style="display: none;" placeholder="Write your CSS here...">body {
+            <textarea class="editor" id="css-editor" style="display: none;" placeholder="Write your CSS here...">body {
     font-family: Arial, sans-serif;
     background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
     margin: 0;
@@ -151,15 +239,45 @@ button {
 button:hover {
     transform: scale(1.1);
 }</textarea>
-        <textarea class="editor" id="js-editor" style="display: none;" placeholder="Write your JavaScript here...">function changeColor() {
+            <textarea class="editor" id="js-editor" style="display: none;" placeholder="Write your JavaScript here...">function changeColor() {
     const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd'];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
     document.body.style.background = `linear-gradient(45deg, ${randomColor}, #667eea)`;
 }</textarea>
-        <button class="run-btn" onclick="runCode()">▶ Run Code</button>
+            <iframe class="preview" id="preview"></iframe>
+        </div>
+        <div class="ad-container">
+            <div class="ad-unit" data-size="300x250">
+                <button class="close-ad" onclick="closeAd(this)">X</button>
+                <script type="text/javascript">
+                    atOptions = {
+                        'key': 'c620af328467e6de19dc04af696ee0fb',
+                        'format': 'iframe',
+                        'height': 250,
+                        'width': 300,
+                        'params': {}
+                    };
+                </script>
+                <script type="text/javascript" src="//www.highperformanceformat.com/c620af328467e6de19dc04af696ee0fb/invoke.js" onload="adLoaded()" onerror="adFailed()"></script>
+            </div>
+            <div class="ad-unit" data-size="320x50">
+                <button class="close-ad" onclick="closeAd(this)">X</button>
+                <script type="text/javascript">
+                    atOptions = {
+                        'key': '78ade24182729fceea8e45203dad915b',
+                        'format': 'iframe',
+                        'height': 50,
+                        'width': 320,
+                        'params': {}
+                    };
+                </script>
+                <script type="text/javascript" src="//www.highperformanceformat.com/78ade24182729fceea8e45203dad915b/invoke.js" onload="adLoaded()" onerror="adFailed()"></script>
+            </div>
+        </div>
     </div>
 
     <script>
+        // Tab switching
         function switchTab(tab) {
             document.getElementById('html-editor').style.display = 'none';
             document.getElementById('css-editor').style.display = 'none';
@@ -167,21 +285,70 @@ button:hover {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById(tab + '-editor').style.display = 'block';
             event.target.classList.add('active');
+            updatePreview();
         }
 
-        function runCode() {
+        // Live preview
+        function updatePreview() {
             const html = document.getElementById('html-editor').value;
-            const css = document.getElementById('css-editor').value;
-            const js = document.getElementById('js-editor').value;
-
-            // Store code in sessionStorage to pass to preview page
-            sessionStorage.setItem('htmlCode', html);
-            sessionStorage.setItem('cssCode', css);
-            sessionStorage.setItem('jsCode', js);
-
-            // Open preview page in a new tab
-            window.open('preview.html', '_blank');
+            const css = `<style>${document.getElementById('css-editor').value}</style>`;
+            const js = `<script>${document.getElementById('js-editor').value}<\/script>`;
+            const preview = document.getElementById('preview').contentWindow.document;
+            preview.open();
+            preview.write(html + css + js);
+            preview.close();
         }
+
+        // Handle ad load success
+        function adLoaded() {
+            document.querySelector('.ad-container').classList.add('visible');
+        }
+
+        // Handle ad load failure
+        function adFailed() {
+            document.querySelector('.ad-container').style.display = 'none';
+        }
+
+        // Close individual ad
+        function closeAd(button) {
+            const adUnit = button.parentElement;
+            adUnit.style.display = 'none';
+            const remainingAds = document.querySelectorAll('.ad-unit:not([style*="display: none"])');
+            if (remainingAds.length === 0) {
+                document.querySelector('.ad-container').style.display = 'none';
+            } else {
+                rotateAds();
+            }
+        }
+
+        // Rotate ads
+        function rotateAds() {
+            const adUnits = document.querySelectorAll('.ad-unit:not([style*="display: none"])');
+            if (adUnits.length === 0) {
+                document.querySelector('.ad-container').style.display = 'none';
+                return;
+            }
+            const activeAd = document.querySelector('.ad-unit.active');
+            if (activeAd) activeAd.classList.remove('active');
+            
+            const randomIndex = Math.floor(Math.random() * adUnits.length);
+            adUnits[randomIndex].classList.add('active');
+        }
+
+        // Show welcome message, update preview, and start ad rotation on page load
+        window.onload = () => {
+            alert('Welcome to Live Preview AR! Start coding in HTML, CSS, or JavaScript and see the results below.');
+            updatePreview();
+            rotateAds(); // Show one ad initially
+            setInterval(rotateAds, 10000); // Rotate ads every 10 seconds
+        };
+
+        // Update preview on input
+        document.querySelectorAll('.editor').forEach(editor => {
+            editor.addEventListener('input', () => {
+                updatePreview();
+            });
+        });
     </script>
 </body>
 </html>
